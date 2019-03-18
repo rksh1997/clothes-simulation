@@ -1,0 +1,38 @@
+{
+  "name": "clothes-simulation",
+  "version": "1.0.0",
+  "description": "VR clothes simulation project",
+  "main": "index.js",
+  "scripts": {
+    "start:dev": "./node_modules/.bin/webpack-dev-server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FrankenSteinxD/clothes-simulation.git"
+  },
+  "keywords": [
+    "vr",
+    "simulation",
+    "clothes"
+  ],
+  "author": "Rashad Kokash <richardeo112@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/FrankenSteinxD/clothes-simulation/issues"
+  },
+  "homepage": "https://github.com/FrankenSteinxD/clothes-simulation#readme",
+  "devDependencies": {
+    "@babel/cli": "^7.2.3",
+    "@babel/core": "^7.3.4",
+    "@babel/polyfill": "^7.2.5",
+    "@babel/preset-env": "^7.3.4",
+    "babel-loader": "^8.0.5",
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.3.0",
+    "webpack-dev-server": "^3.2.1"
+  },
+  "dependencies": {
+    "http-server": "^0.11.1",
+    "three": "^0.102.1"
+  }
+}
