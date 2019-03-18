@@ -1,39 +1,72 @@
 import {
-	Scene,
-	PerspectiveCamera,
-	WebGLRenderer,
-    BoxGeometry,
-    MeshBasicMaterial,
-    Mesh
+  Scene,
+  PerspectiveCamera,
+  WebGLRenderer,
+  BoxGeometry,
+  MeshBasicMaterial,
+  Mesh,
+  Color,
+  Fog,
+  SphereGeometry,
+  Vector3
 } from 'three';
 
-// import Cloth from './Cloth';
-// const cloth = new Cloth(10, 10);
-// console.log(cloth);
 
 const WIDTH = window.innerWidth;
 const HEIGHT = window.innerHeight;
 
-const scene = new Scene()
-const camera = new PerspectiveCamera(75, WIDTH / HEIGHT, 0.1, 100);
-const renderer = new WebGLRenderer()
+const scene = new Scene();
+scene.background = new Color( 0xcce0ff );
+scene.fog = new Fog( 0xcce0ff, 500, 10000 );
 
+const camera = new PerspectiveCamera(75, WIDTH / HEIGHT, 0.1, 100);
+camera.position.z = 5;
+
+const renderer = new WebGLRenderer();
 renderer.setSize(WIDTH, HEIGHT);
-document.body.appendChild(renderer.domElement);
 
 const geometry = new BoxGeometry( 1, 1, 1 );
 const material = new MeshBasicMaterial( { color: 0x00ff00 } );
 const cube = new Mesh( geometry, material );
 
-scene.add( cube );
-camera.position.z = 5;
 
+let lastFrameTimeMs = 0;
+let maxFPS = 60;
+let delta = 0;
+let timestep = 1000 / maxFPS;
 
+function loop(timestamp) {
+  if (timestamp < lastFrameTimeMs + (1000 / maxFPS)) {
+    requestAnimationFrame(loop);
+    return;
+  }
 
-function animate() {
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.01;
-    requestAnimationFrame( animate );
-    renderer.render( scene, camera );
+  delta += timestamp - lastFrameTimeMs;
+  lastFrameTimeMs = timestamp;
+
+  let numUpdateSteps = 0;
+  while (delta >= timestep) {
+    update(timestep);
+    delta -= timestep;
+    if (++numUpdateSteps >= 100) {
+      delta = 0;
+      break;
+    }
+  }
+
+  render();
+  requestAnimationFrame(loop);
 }
-animate();
+
+function update(dt) {
+  cube.rotation.x += 0.01;
+  cube.rotation.y += 0.01; 
+}
+
+function render(dt) {
+  renderer.render( scene, camera );
+}
+
+scene.add( cube );
+document.body.appendChild(renderer.domElement);
+requestAnimationFrame(loop);
