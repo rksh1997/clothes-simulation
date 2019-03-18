@@ -36,9 +36,21 @@ class Cloth {
     }
   }
 
-  update() {}
+  update(dt) {
+    for (let i = 0; i < this.width; i += 1) {
+      for (let j = 0; j < this.height; j += 1) {
+        this.particles[i * this.width + j].update(dt);
+      }
+    }
+  }
 
-  draw() {}
+  draw(scene) {
+    for (let i = 0; i < this.width; i += 1) {
+      for (let j = 0; j < this.height; j += 1) {
+        this.particles[i * this.width + j].draw(scene);
+      }
+    }
+  }
 }
 
 export default Cloth;

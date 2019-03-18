@@ -10,6 +10,7 @@ import {
   SphereGeometry,
   Vector3
 } from 'three';
+import Particle from './Particle';
 
 
 const WIDTH = window.innerWidth;
@@ -25,15 +26,32 @@ camera.position.z = 5;
 const renderer = new WebGLRenderer();
 renderer.setSize(WIDTH, HEIGHT);
 
-const geometry = new BoxGeometry( 1, 1, 1 );
+const geometry = new SphereGeometry( .1, 10, 10 );
 const material = new MeshBasicMaterial( { color: 0x00ff00 } );
-const cube = new Mesh( geometry, material );
 
 
 let lastFrameTimeMs = 0;
 let maxFPS = 60;
 let delta = 0;
 let timestep = 1000 / maxFPS;
+
+const particles = [];
+const width = 10;
+const height = 10;
+function init() {
+  for(let i = 0; i < width; i += 1) {
+    for (let j = 0; j < height; j += 1) {
+        const t = new Particle(
+            geometry,
+            material,
+            new Vector3((i * 5) / width - 2.5, (j * 5) / height - 2.5, 0),
+            10
+        );
+        particles.push(t);
+        scene.add(t);
+    }
+  }
+}
 
 function loop(timestamp) {
   if (timestamp < lastFrameTimeMs + (1000 / maxFPS)) {
@@ -59,14 +77,16 @@ function loop(timestamp) {
 }
 
 function update(dt) {
-  cube.rotation.x += 0.01;
-  cube.rotation.y += 0.01; 
+  
 }
 
 function render(dt) {
   renderer.render( scene, camera );
 }
 
-scene.add( cube );
+
 document.body.appendChild(renderer.domElement);
+init();
+console.log(particles)
+
 requestAnimationFrame(loop);
