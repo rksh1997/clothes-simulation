@@ -7,6 +7,10 @@ import {
     Mesh
 } from 'three';
 
+// import Cloth from './Cloth';
+// const cloth = new Cloth(10, 10);
+// console.log(cloth);
+
 const WIDTH = window.innerWidth;
 const HEIGHT = window.innerHeight;
 
@@ -23,6 +27,8 @@ const cube = new Mesh( geometry, material );
 
 scene.add( cube );
 camera.position.z = 5;
+
+
 
 function animate() {
     cube.rotation.x += 0.01;
