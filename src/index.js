@@ -12,6 +12,7 @@ import {
 } from 'three';
 import Particle from './Particle';
 
+console.log(new Vector3());
 
 const WIDTH = window.innerWidth;
 const HEIGHT = window.innerHeight;
@@ -87,6 +88,6 @@ function render(dt) {
 
 document.body.appendChild(renderer.domElement);
 init();
-console.log(particles)
+// console.log(particles)
 
 requestAnimationFrame(loop);

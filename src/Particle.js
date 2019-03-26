@@ -15,6 +15,15 @@ class Particle extends Mesh {
     this.acceleration = new Vector3(0, 0, 0);
     this.mass = mass;
     this.invMass = 1 / mass;
+    this.springs = []
+  }
+
+  preUpdate(dt) {
+    const length = this.springs.length;
+    for(let i = 0; i < length; i += 1) {
+      const spring = this.springs[i];
+      spring.update(dt);
+    }
   }
 
   update(dt) {
@@ -25,7 +34,7 @@ class Particle extends Mesh {
   }
 
   applyGravity(gravity) {
-    this.acceleration.add(gravity.multiplyScalar(this.invMassm));
+    this.acceleration.add(gravity.multiplyScalar(this.invMass));
   }
 
   applyForce(force) {
