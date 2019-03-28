@@ -12,8 +12,6 @@ import {
 } from 'three';
 import Particle from './Particle';
 
-console.log(new Vector3());
-
 const WIDTH = window.innerWidth;
 const HEIGHT = window.innerHeight;
 
@@ -28,7 +26,7 @@ const renderer = new WebGLRenderer();
 renderer.setSize(WIDTH, HEIGHT);
 
 const geometry = new SphereGeometry( .1, 10, 10 );
-const material = new MeshBasicMaterial( { color: 0x00ff00 } );
+const material = new MeshBasicMaterial( { color: 0xbbaacc } );
 
 
 let lastFrameTimeMs = 0;

@@ -1,4 +1,6 @@
-import { Vector3 } from 'three';
+import {
+  Vector3
+} from 'three';
 import Particle from './Particle';
 
 class Cloth {
@@ -17,10 +19,10 @@ class Cloth {
 
     this.MASS = 10;
 
-    this.init();
+    this.createParticles();
   }
 
-  init() {
+  createParticles() {
     for (let i = 0; i < this.width; i += 1) {
       for (let j = 0; j < this.height; j += 1) {
         this.particles.push(
@@ -32,8 +34,11 @@ class Cloth {
           )
         )
       }
-
     }
+  }
+
+  createFaces() {
+
   }
 
   update(dt) {
