@@ -48449,6 +48449,116 @@ function LensFlare() {
 
 /***/ }),
 
+/***/ "./src/Cloth.js":
+/*!**********************!*\
+  !*** ./src/Cloth.js ***!
+  \**********************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _Particle__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Particle */ "./src/Particle.js");
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+
+
+
+var Cloth =
+/*#__PURE__*/
+function (_Geometry) {
+  _inherits(Cloth, _Geometry);
+
+  function Cloth(width, height) {
+    var _this;
+
+    _classCallCheck(this, Cloth);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Cloth).call(this)); // number of particles in width
+
+    _this.width = width; // number of particles in height
+
+    _this.height = height;
+    _this.MASS = 10;
+
+    _this.createParticles();
+
+    _this.createFaces();
+
+    return _this;
+  }
+
+  _createClass(Cloth, [{
+    key: "createParticles",
+    value: function createParticles() {
+      for (var i = 0; i < this.width; i += 1) {
+        for (var j = 0; j < this.height; j += 1) {
+          this.vertices.push(new _Particle__WEBPACK_IMPORTED_MODULE_1__["default"](i / this.width, j / this.height, 0, this.MASS));
+        }
+      }
+    }
+  }, {
+    key: "createFaces",
+    value: function createFaces() {
+      var color = new three__WEBPACK_IMPORTED_MODULE_0__["Color"](0xff0000);
+      var normal = new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"](0, 0, 1);
+
+      for (var i = 0; i < this.width - 1; i += 1) {
+        for (var j = 0; j < this.height - 1; j += 1) {
+          var p1 = i * this.width + j;
+          var p2 = p1 + 1;
+          var p3 = p1 + this.width;
+          this.faces.push(new three__WEBPACK_IMPORTED_MODULE_0__["Face3"](p1, p2, p3));
+        }
+      }
+
+      for (var _i = this.width - 1; _i > 0; _i -= 1) {
+        for (var _j = this.height - 1; _j > 0; _j -= 1) {
+          var _p = _i * this.width + _j;
+
+          var _p2 = _p - 1;
+
+          var _p3 = _p - this.width;
+
+          this.faces.push(new three__WEBPACK_IMPORTED_MODULE_0__["Face3"](_p, _p2, _p3, normal, color, 0));
+        }
+      }
+    }
+  }, {
+    key: "update",
+    value: function update(dt) {
+      for (var i = 0; i < this.width; i += 1) {
+        for (var j = 0; j < this.height; j += 1) {
+          this.particles[i * this.width + j].update(dt);
+        }
+      }
+    }
+  }]);
+
+  return Cloth;
+}(three__WEBPACK_IMPORTED_MODULE_0__["Geometry"]);
+
+/* harmony default export */ __webpack_exports__["default"] = (Cloth);
+
+/***/ }),
+
 /***/ "./src/Particle.js":
 /*!*************************!*\
   !*** ./src/Particle.js ***!
@@ -48481,19 +48591,16 @@ function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || func
 
 var Particle =
 /*#__PURE__*/
-function (_Mesh) {
-  _inherits(Particle, _Mesh);
+function (_Vector) {
+  _inherits(Particle, _Vector);
 
-  function Particle(geometry, material, position, mass) {
+  function Particle(x, y, z, mass) {
     var _this;
 
     _classCallCheck(this, Particle);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Particle).call(this, geometry, material));
-
-    _this.position.copy(position);
-
-    _this.previousPosition = position.clone();
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Particle).call(this, x, y, z));
+    _this.previousPosition = new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"](x, y, z);
     _this.velocity = new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"](0, 0, 0);
     _this.acceleration = new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"](0, 0, 0);
     _this.mass = mass;
@@ -48534,7 +48641,7 @@ function (_Mesh) {
   }]);
 
   return Particle;
-}(three__WEBPACK_IMPORTED_MODULE_0__["Mesh"]);
+}(three__WEBPACK_IMPORTED_MODULE_0__["Vector3"]);
 
 /* harmony default export */ __webpack_exports__["default"] = (Particle);
 
@@ -48551,39 +48658,33 @@ function (_Mesh) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _Particle__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Particle */ "./src/Particle.js");
+/* harmony import */ var _Cloth__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Cloth */ "./src/Cloth.js");
 
 
-console.log(new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"]());
+ // console.log(new Geometry());
+
 var WIDTH = window.innerWidth;
 var HEIGHT = window.innerHeight;
 var scene = new three__WEBPACK_IMPORTED_MODULE_0__["Scene"]();
 scene.background = new three__WEBPACK_IMPORTED_MODULE_0__["Color"](0xcce0ff);
 scene.fog = new three__WEBPACK_IMPORTED_MODULE_0__["Fog"](0xcce0ff, 500, 10000);
 var camera = new three__WEBPACK_IMPORTED_MODULE_0__["PerspectiveCamera"](75, WIDTH / HEIGHT, 0.1, 100);
-camera.position.z = 5;
+camera.position.z = 2;
 var renderer = new three__WEBPACK_IMPORTED_MODULE_0__["WebGLRenderer"]();
-renderer.setSize(WIDTH, HEIGHT);
-var geometry = new three__WEBPACK_IMPORTED_MODULE_0__["SphereGeometry"](.1, 10, 10);
-var material = new three__WEBPACK_IMPORTED_MODULE_0__["MeshBasicMaterial"]({
-  color: 0xbbaacc
-});
+renderer.setSize(WIDTH, HEIGHT); // const geometry = new SphereGeometry( .1, 10, 10 );
+// const material = new MeshBasicMaterial( { color: 0xbbaacc } );
+
 var lastFrameTimeMs = 0;
 var maxFPS = 60;
 var delta = 0;
 var timestep = 1000 / maxFPS;
-var particles = [];
-var width = 10;
-var height = 10;
-
-function init() {
-  for (var i = 0; i < width; i += 1) {
-    for (var j = 0; j < height; j += 1) {
-      var t = new _Particle__WEBPACK_IMPORTED_MODULE_1__["default"](geometry, material, new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"](i * 5 / width - 2.5, j * 5 / height - 2.5, 0), 10);
-      particles.push(t);
-      scene.add(t);
-    }
-  }
-}
+var cloth = new _Cloth__WEBPACK_IMPORTED_MODULE_2__["default"](10, 10);
+var material = new three__WEBPACK_IMPORTED_MODULE_0__["MeshBasicMaterial"]({
+  wireframe: true,
+  color: 0xff0000
+});
+var mesh = new three__WEBPACK_IMPORTED_MODULE_0__["Mesh"](cloth, material);
+scene.add(mesh);
 
 function loop(timestamp) {
   if (timestamp < lastFrameTimeMs + 1000 / maxFPS) {
@@ -48615,8 +48716,7 @@ function render(dt) {
   renderer.render(scene, camera);
 }
 
-document.body.appendChild(renderer.domElement);
-init(); // console.log(particles)
+document.body.appendChild(renderer.domElement); // console.log(particles)
 
 requestAnimationFrame(loop);
 

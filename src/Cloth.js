@@ -1,31 +1,30 @@
 import {
-  Vector3
+  Vector3,
+  Geometry,
+  Face3,
+  Color
 } from 'three';
 import Particle from './Particle';
 
-class Cloth {
+class Cloth extends Geometry {
   constructor(width, height) {
+    super();
     // number of particles in width
     this.width = width;
 
     // number of particles in height
     this.height = height;
 
-    // distance between two particles
-    this.padding = 10;
-
-    // container for particles
-    this.particles = [];
-
     this.MASS = 10;
 
     this.createParticles();
+    this.createFaces();
   }
 
   createParticles() {
     for (let i = 0; i < this.width; i += 1) {
       for (let j = 0; j < this.height; j += 1) {
-        this.particles.push(
+        this.vertices.push(
           new Particle(
             i / this.width,
             j / this.height,
@@ -38,21 +37,31 @@ class Cloth {
   }
 
   createFaces() {
+    const color = new Color(0xffff00);
+    const normal = new Vector3(0, 0, 1);
+    for (let i = 0; i < this.width - 1; i += 1) {
+      for (let j = 0; j < this.height - 1; j += 1) {
+        const p1 = i * this.width + j;
+        const p2 = p1 + 1;
+        const p3 = p1 + this.width;
+        this.faces.push(new Face3(p1, p2, p3,));
+      }
+    }
 
+    for (let i = this.width - 1; i > 0; i -= 1) {
+      for (let j = this.height - 1; j > 0; j -= 1) {
+        const p1 = i * this.width + j;
+        const p2 = p1 - 1;
+        const p3 = p1 - this.width;
+        this.faces.push(new Face3(p1, p2, p3, normal, color, 0));
+      }
+    }
   }
 
   update(dt) {
     for (let i = 0; i < this.width; i += 1) {
       for (let j = 0; j < this.height; j += 1) {
         this.particles[i * this.width + j].update(dt);
-      }
-    }
-  }
-
-  draw(scene) {
-    for (let i = 0; i < this.width; i += 1) {
-      for (let j = 0; j < this.height; j += 1) {
-        this.particles[i * this.width + j].draw(scene);
       }
     }
   }

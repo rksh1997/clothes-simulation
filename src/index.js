@@ -8,9 +8,14 @@ import {
   Color,
   Fog,
   SphereGeometry,
-  Vector3
+  Vector3,
+  Geometry
 } from 'three';
+
 import Particle from './Particle';
+import Cloth from './Cloth';
+
+// console.log(new Geometry());
 
 const WIDTH = window.innerWidth;
 const HEIGHT = window.innerHeight;
@@ -20,37 +25,23 @@ scene.background = new Color( 0xcce0ff );
 scene.fog = new Fog( 0xcce0ff, 500, 10000 );
 
 const camera = new PerspectiveCamera(75, WIDTH / HEIGHT, 0.1, 100);
-camera.position.z = 5;
+camera.position.z = 2;
 
 const renderer = new WebGLRenderer();
 renderer.setSize(WIDTH, HEIGHT);
 
-const geometry = new SphereGeometry( .1, 10, 10 );
-const material = new MeshBasicMaterial( { color: 0xbbaacc } );
-
+// const geometry = new SphereGeometry( .1, 10, 10 );
+// const material = new MeshBasicMaterial( { color: 0xbbaacc } );
 
 let lastFrameTimeMs = 0;
 let maxFPS = 60;
 let delta = 0;
 let timestep = 1000 / maxFPS;
 
-const particles = [];
-const width = 10;
-const height = 10;
-function init() {
-  for(let i = 0; i < width; i += 1) {
-    for (let j = 0; j < height; j += 1) {
-        const t = new Particle(
-            geometry,
-            material,
-            new Vector3((i * 5) / width - 2.5, (j * 5) / height - 2.5, 0),
-            10
-        );
-        particles.push(t);
-        scene.add(t);
-    }
-  }
-}
+const cloth = new Cloth(10, 10);
+const material = new MeshBasicMaterial({ wireframe:true, color: 0xff0000 });
+const mesh = new Mesh(cloth, material);
+scene.add(mesh);
 
 function loop(timestamp) {
   if (timestamp < lastFrameTimeMs + (1000 / maxFPS)) {
@@ -80,12 +71,11 @@ function update(dt) {
 }
 
 function render(dt) {
-  renderer.render( scene, camera );
+  renderer.render(scene, camera);
 }
 
 
 document.body.appendChild(renderer.domElement);
-init();
 // console.log(particles)
 
 requestAnimationFrame(loop);
