@@ -1,22 +1,10 @@
-import { Vector3 } from 'three';
-
 class Spring {
-	constructor(p1, p2, resetDistance) {
+  constructor(cloth, p1, p2, K) {
     this.p1 = p1;
     this.p2 = p2;
-    this.resetDistance = resetDistance;
-	}
-
-  update() {
-    const p1 = this.p1.position;
-    const p2 = this.p2.position;
-
-    const dist = Vector3.subVectors(p1, p2);
-
-    dist.setLength(dist.getLength - this.resetDistance);
-
-    const f = dist.multiplyScalar(STIFFNESS);
-    this.p1.applyForce(f);
-    // this.p2.applyForce(f.multiplyScalar(-1));
+    this.K = K;
+    this.restDistance = cloth.vertices[p1].distanceTo(cloth.vertices[p2])
   }
 }
+
+export default Spring;
