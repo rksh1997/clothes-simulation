@@ -4,7 +4,6 @@ import {
   Face3,
   Color
 } from 'three';
-// import Particle from './Particle';
 import Spring from './Spring';
 
 class Cloth extends Geometry {
@@ -18,13 +17,21 @@ class Cloth extends Geometry {
 
     this.MASS = 1;
 
-    this.springs = new Array();
-    this.forces = new Array();
-    this.velocities = new Array();
+    this.springs = [];
+    this.forces = [];
+    this.velocities = [];
+
+    this.lastTimeWindAffected = 0;
+    this.theta = 0;
+    this.sign = 1;
 
     this.createParticles();
     this.createSprings()
     this.createFaces();
+
+    document.body.addEventListener('mousedown', () => {
+      this.sign *= -1;
+    })
   }
 
   createParticles() {
@@ -92,8 +99,22 @@ class Cloth extends Geometry {
   computeForces() {
     for (let i in this.vertices) {
       this.forces[i].set(0, 0, 0)
-      if (i != 0 && i != this.width - 1)
+      if (i != 0 && i != this.width - 1) {
         this.forces[i].add(new Vector3(0, -9.8, 0)) // gravity
+      }
+
+      if (i != 0 && i != this.width - 1) {
+        if (Date.now() - this.lastTimeWindAffected > 10) {
+          if (true || i >= (this.width-1) * (this.height-1) - 10)
+          {
+            this.forces[i].add(new Vector3(Math.abs(Math.sin(this.theta)) * this.sign * 7, 0, Math.abs(Math.cos(this.theta)) * this.sign * 7));
+            this.theta += 0.001;
+            if (i == (this.width-1) * (this.height-1))
+              this.lastTimeWindAffected = Date.now();
+          }
+        }
+      }
+
       this.forces[i].sub(this.velocities[i].clone().multiplyScalar(1.5)) // damping
     }
 
