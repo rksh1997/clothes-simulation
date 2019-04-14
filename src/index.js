@@ -7,10 +7,8 @@ import {
   Fog,
   DoubleSide,
   PointLight,
-  Projector,
-  MeshStandardMaterial,
-  Vector3,
-  Raycaster
+  MeshLambertMaterial,
+  Vector3
 } from 'three';
 
 import Cloth from './Cloth';
@@ -22,15 +20,14 @@ const scene = new Scene();
 scene.background = new Color(0xcce0ff);
 scene.fog = new Fog(0xcce0ff, 500, 10000);
 
-const camera = new PerspectiveCamera(40, WIDTH / HEIGHT, 0.1, 100);
-camera.position.set(0, 10, 7)
+const camera = new PerspectiveCamera(60, WIDTH / HEIGHT, 0.1, 100);
+camera.position.set(0, 2.5, 10)
 camera.lookAt(0, 0, 0);
 
 const pointLight = new PointLight(0xdddddd);
 pointLight.position.copy(camera.position)
 scene.add(pointLight);
 
-const projector = new Projector();
 const renderer = new WebGLRenderer();
 renderer.setSize(WIDTH, HEIGHT);
 
@@ -39,9 +36,14 @@ let maxFPS = 60;
 let delta = 0;
 let timestep = 1000 / maxFPS;
 
-const cloth = new Cloth(15, 15);
+const num = 10 * 2
 
-const material = new MeshStandardMaterial({ wireframe: false, color: 0xff0000 });
+const cloth = new Cloth(num, num);
+
+const material = new MeshLambertMaterial({
+  wireframe: false,
+  color: 0xFF0000
+});
 const mesh = new Mesh(cloth, material);
 mesh.material.side = DoubleSide;
 scene.add(mesh);
@@ -57,7 +59,7 @@ function loop(timestamp) {
 
   let numUpdateSteps = 0;
   while (delta >= timestep) {
-    update(timestep);
+    update(1 / 60);
     delta -= timestep;
     if (++numUpdateSteps >= 100) {
       delta = 0;
@@ -71,7 +73,7 @@ function loop(timestamp) {
 
 function update(dt) {
   cloth.computeForces()
-  cloth.update()
+  cloth.update(1.0 / 60)
   cloth.computeFaceNormals()
   cloth.computeVertexNormals()
   cloth.normalsNeedUpdate = true
@@ -81,6 +83,17 @@ function render() {
   renderer.render(scene, camera);
 }
 
+requestAnimationFrame(loop);
 
 document.body.appendChild(renderer.domElement);
-requestAnimationFrame(loop);
+
+// function animate() {
+//   requestAnimationFrame(animate)
+//   cloth.computeForces()
+//   cloth.update(1.0 / 60)
+//   cloth.computeFaceNormals()
+//   cloth.computeVertexNormals()
+//   cloth.normalsNeedUpdate = true
+//   renderer.render(scene, camera)
+// }
+// animate();
