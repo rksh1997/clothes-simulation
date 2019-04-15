@@ -48459,7 +48459,7 @@ function LensFlare() {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _Particle__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Particle */ "./src/Particle.js");
+/* harmony import */ var _Spring__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Spring */ "./src/Spring.js");
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -48478,6 +48478,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
+ // import Particle from './Particle';
 
 
 
@@ -48496,9 +48497,14 @@ function (_Geometry) {
     _this.width = width; // number of particles in height
 
     _this.height = height;
-    _this.MASS = 10;
+    _this.MASS = 1;
+    _this.springs = new Array();
+    _this.forces = new Array();
+    _this.velocities = new Array();
 
     _this.createParticles();
+
+    _this.createSprings();
 
     _this.createFaces();
 
@@ -48508,16 +48514,52 @@ function (_Geometry) {
   _createClass(Cloth, [{
     key: "createParticles",
     value: function createParticles() {
-      for (var i = 0; i < this.width; i += 1) {
-        for (var j = 0; j < this.height; j += 1) {
-          this.vertices.push(new _Particle__WEBPACK_IMPORTED_MODULE_1__["default"](i / this.width, j / this.height, 0, this.MASS));
+      var size = 4;
+      var hsize = size / 2;
+
+      for (var j = 0; j < this.width; j++) {
+        for (var i = 0; i < this.height; i++) {
+          this.vertices.push(new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"]((i / (this.width - 1) * 2.0 - 1.) * hsize, size + 1, j / (this.height - 1.0) * size));
+          this.forces.push(new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"](0, 0, 0));
+          this.velocities.push(new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"](0, 0, 0));
+        }
+      }
+    }
+  }, {
+    key: "check",
+    value: function check(x, y) {
+      return x >= 0 && y >= 0 && x < this.height && y < this.width;
+    }
+  }, {
+    key: "flatten",
+    value: function flatten(i, j) {
+      return i * this.width + j;
+    }
+  }, {
+    key: "createSprings",
+    value: function createSprings() {
+      var dc = [1, 1, 1, -1, -1, -1, 0, 0];
+      var dr = [1, -1, 0, 1, -1, 0, 1, -1];
+
+      for (var i = 0; i < this.height; i++) {
+        for (var j = 0; j < this.width; j++) {
+          var p = this.flatten(i, j);
+
+          for (var d = 0; d < 8; d++) {
+            var ii = i + dr[d];
+            var jj = j + dc[d];
+
+            if (this.check(ii, jj)) {
+              this.springs.push(new _Spring__WEBPACK_IMPORTED_MODULE_1__["default"](this, p, this.flatten(ii, jj), 1000));
+            }
+          }
         }
       }
     }
   }, {
     key: "createFaces",
     value: function createFaces() {
-      var color = new three__WEBPACK_IMPORTED_MODULE_0__["Color"](0xff0000);
+      var color = new three__WEBPACK_IMPORTED_MODULE_0__["Color"](0xffff00);
       var normal = new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"](0, 0, 1);
 
       for (var i = 0; i < this.width - 1; i += 1) {
@@ -48542,12 +48584,44 @@ function (_Geometry) {
       }
     }
   }, {
+    key: "computeForces",
+    value: function computeForces() {
+      for (var i in this.vertices) {
+        this.forces[i].set(0, 0, 0);
+        if (i != 0 && i != this.width - 1) this.forces[i].add(new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"](0, -9.8, 0)); // gravity
+
+        this.forces[i].sub(this.velocities[i].clone().multiplyScalar(1.5)); // damping
+      }
+
+      var deltaP = new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"]();
+      var deltaV = new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"]();
+
+      for (var _i2 in this.springs) {
+        var idx1 = this.springs[_i2].p1;
+        var idx2 = this.springs[_i2].p2;
+        var p1 = this.vertices[idx1];
+        var p2 = this.vertices[idx2];
+        deltaP.subVectors(p1, p2);
+        var v1 = this.velocities[idx1];
+        var v2 = this.velocities[idx2];
+        deltaV.subVectors(v1, v2);
+        var dist = deltaP.length();
+        var leftTerm = -this.springs[_i2].K * (dist - this.springs[_i2].restDistance) / 2;
+        var rightTerm = -0.5 * (deltaV.dot(deltaV) / dist);
+        var springForce = deltaP.normalize().multiplyScalar(leftTerm + rightTerm);
+        if (idx1 != this.width - 1 && idx1 != 0) this.forces[idx1].add(springForce);
+        if (idx2 != this.width - 1 && idx2 != 0) this.forces[idx2].sub(springForce);
+      }
+    }
+  }, {
     key: "update",
     value: function update(dt) {
-      for (var i = 0; i < this.width; i += 1) {
-        for (var j = 0; j < this.height; j += 1) {
-          this.particles[i * this.width + j].update(dt);
-        }
+      this.verticesNeedUpdate = true;
+
+      for (var i in this.vertices) {
+        var prevVelocity = this.velocities[i];
+        this.velocities[i].add(this.forces[i].clone().multiplyScalar(dt / this.MASS));
+        this.vertices[i].add(prevVelocity.clone().multiplyScalar(dt));
       }
     }
   }]);
@@ -48559,91 +48633,27 @@ function (_Geometry) {
 
 /***/ }),
 
-/***/ "./src/Particle.js":
-/*!*************************!*\
-  !*** ./src/Particle.js ***!
-  \*************************/
+/***/ "./src/Spring.js":
+/*!***********************!*\
+  !*** ./src/Spring.js ***!
+  \***********************/
 /*! exports provided: default */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+var Spring = function Spring(cloth, p1, p2, K) {
+  _classCallCheck(this, Spring);
 
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+  this.p1 = p1;
+  this.p2 = p2;
+  this.K = K;
+  this.restDistance = cloth.vertices[p1].distanceTo(cloth.vertices[p2]);
+};
 
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-
-
-var Particle =
-/*#__PURE__*/
-function (_Vector) {
-  _inherits(Particle, _Vector);
-
-  function Particle(x, y, z, mass) {
-    var _this;
-
-    _classCallCheck(this, Particle);
-
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Particle).call(this, x, y, z));
-    _this.previousPosition = new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"](x, y, z);
-    _this.velocity = new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"](0, 0, 0);
-    _this.acceleration = new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"](0, 0, 0);
-    _this.mass = mass;
-    _this.invMass = 1 / mass;
-    _this.springs = [];
-    return _this;
-  }
-
-  _createClass(Particle, [{
-    key: "preUpdate",
-    value: function preUpdate(dt) {
-      var length = this.springs.length;
-
-      for (var i = 0; i < length; i += 1) {
-        var spring = this.springs[i];
-        spring.update(dt);
-      }
-    }
-  }, {
-    key: "update",
-    value: function update(dt) {
-      this.previousPosition = this.position.clone();
-      this.position.add(this.velocity.multiplyScalar(dt));
-      this.velocity.add(this.acceleration);
-      this.acceleration.set(0, 0, 0);
-    }
-  }, {
-    key: "applyGravity",
-    value: function applyGravity(gravity) {
-      this.acceleration.add(gravity.multiplyScalar(this.invMass));
-    }
-  }, {
-    key: "applyForce",
-    value: function applyForce(force) {
-      var tmp = new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"]();
-      this.acceleration.add(tmp.copy(force));
-    }
-  }]);
-
-  return Particle;
-}(three__WEBPACK_IMPORTED_MODULE_0__["Vector3"]);
-
-/* harmony default export */ __webpack_exports__["default"] = (Particle);
+/* harmony default export */ __webpack_exports__["default"] = (Spring);
 
 /***/ }),
 
@@ -48657,49 +48667,48 @@ function (_Vector) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _Particle__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Particle */ "./src/Particle.js");
-/* harmony import */ var _Cloth__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Cloth */ "./src/Cloth.js");
+/* harmony import */ var _Cloth__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Cloth */ "./src/Cloth.js");
 
-
- // console.log(new Geometry());
 
 var WIDTH = window.innerWidth;
 var HEIGHT = window.innerHeight;
 var scene = new three__WEBPACK_IMPORTED_MODULE_0__["Scene"]();
 scene.background = new three__WEBPACK_IMPORTED_MODULE_0__["Color"](0xcce0ff);
 scene.fog = new three__WEBPACK_IMPORTED_MODULE_0__["Fog"](0xcce0ff, 500, 10000);
-var camera = new three__WEBPACK_IMPORTED_MODULE_0__["PerspectiveCamera"](75, WIDTH / HEIGHT, 0.1, 100);
-camera.position.z = 2;
+var camera = new three__WEBPACK_IMPORTED_MODULE_0__["PerspectiveCamera"](60, WIDTH / HEIGHT, 0.1, 100);
+camera.position.set(0, 2.5, 10);
+camera.lookAt(0, 0, 0);
+var pointLight = new three__WEBPACK_IMPORTED_MODULE_0__["PointLight"](0xdddddd);
+pointLight.position.copy(camera.position);
+scene.add(pointLight);
 var renderer = new three__WEBPACK_IMPORTED_MODULE_0__["WebGLRenderer"]();
-renderer.setSize(WIDTH, HEIGHT); // const geometry = new SphereGeometry( .1, 10, 10 );
-// const material = new MeshBasicMaterial( { color: 0xbbaacc } );
+renderer.setSize(WIDTH, HEIGHT); // let lastFrameTimeMs = 0;
+// let maxFPS = 60;
+// let delta = 0;
+// let timestep = 1000 / maxFPS;
 
-var lastFrameTimeMs = 0;
-var maxFPS = 60;
-var delta = 0;
-var timestep = 1000 / maxFPS;
-var cloth = new _Cloth__WEBPACK_IMPORTED_MODULE_2__["default"](10, 10);
-var material = new three__WEBPACK_IMPORTED_MODULE_0__["MeshBasicMaterial"]({
-  wireframe: true,
+var cloth = new _Cloth__WEBPACK_IMPORTED_MODULE_1__["default"](10, 10);
+var material = new three__WEBPACK_IMPORTED_MODULE_0__["MeshStandardMaterial"]({
+  wireframe: false,
   color: 0xff0000
 });
 var mesh = new three__WEBPACK_IMPORTED_MODULE_0__["Mesh"](cloth, material);
+mesh.material.side = three__WEBPACK_IMPORTED_MODULE_0__["DoubleSide"];
 scene.add(mesh);
-
+/*
 function loop(timestamp) {
-  if (timestamp < lastFrameTimeMs + 1000 / maxFPS) {
+  if (timestamp < lastFrameTimeMs + (1000 / maxFPS)) {
     requestAnimationFrame(loop);
     return;
   }
 
   delta += timestamp - lastFrameTimeMs;
   lastFrameTimeMs = timestamp;
-  var numUpdateSteps = 0;
 
+  let numUpdateSteps = 0;
   while (delta >= timestep) {
-    update(timestep);
+    update(1 / 60);
     delta -= timestep;
-
     if (++numUpdateSteps >= 100) {
       delta = 0;
       break;
@@ -48710,15 +48719,34 @@ function loop(timestamp) {
   requestAnimationFrame(loop);
 }
 
-function update(dt) {}
+function update(dt) {
+  cloth.computeForces()
+  cloth.update(dt)
+}
 
 function render(dt) {
+  cloth.computeFaceNormals()
+  cloth.computeVertexNormals()
+  cloth.normalsNeedUpdate = true
   renderer.render(scene, camera);
 }
 
-document.body.appendChild(renderer.domElement); // console.log(particles)
-
 requestAnimationFrame(loop);
+*/
+
+document.body.appendChild(renderer.domElement);
+
+function animate() {
+  requestAnimationFrame(animate);
+  cloth.computeForces();
+  cloth.update(1.0 / 60);
+  cloth.computeFaceNormals();
+  cloth.computeVertexNormals();
+  cloth.normalsNeedUpdate = true;
+  renderer.render(scene, camera);
+}
+
+animate();
 
 /***/ })
 

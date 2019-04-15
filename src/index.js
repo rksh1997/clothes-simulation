@@ -2,23 +2,19 @@ import {
   Scene,
   PerspectiveCamera,
   WebGLRenderer,
-  // BoxGeometry,
-  MeshBasicMaterial,
+  // OrbitControls,
   Mesh,
   Color,
   Fog,
-  // SphereGeometry,
-  // Vector3,
-  // Geometry,
   DoubleSide,
   PointLight,
+  MeshNormalMaterial,
+  MeshBasicMaterial,
   MeshPhongMaterial,
   MeshLambertMaterial,
-  MeshNormalMaterial,
   MeshStandardMaterial
 } from 'three';
 
-// import Particle from './Particle';
 import Cloth from './Cloth';
 
 const WIDTH = window.innerWidth;
@@ -28,8 +24,8 @@ const scene = new Scene();
 scene.background = new Color(0xcce0ff);
 scene.fog = new Fog(0xcce0ff, 500, 10000);
 
-const camera = new PerspectiveCamera(60, WIDTH / HEIGHT, 0.1, 100);
-camera.position.set(0, 2.5, 10)
+const camera = new PerspectiveCamera(45, WIDTH / HEIGHT, 0.1, 100);
+camera.position.set(11, 0, 2.5)
 camera.lookAt(0, 0, 0);
 
 const pointLight = new PointLight(0xdddddd);
@@ -39,17 +35,22 @@ scene.add(pointLight);
 const renderer = new WebGLRenderer();
 renderer.setSize(WIDTH, HEIGHT);
 
-let lastFrameTimeMs = 0;
-let maxFPS = 60;
-let delta = 0;
-let timestep = 1000 / maxFPS;
+const num = 60
+const cloth = new Cloth(num, num);
 
-const cloth = new Cloth(10, 10);
-
-const material = new MeshStandardMaterial({ wireframe: false, color: 0xff0000 });
+const material = new MeshPhongMaterial({
+  wireframe: true,
+  color: 0xFF9999
+});
 const mesh = new Mesh(cloth, material);
 mesh.material.side = DoubleSide;
 scene.add(mesh);
+
+// let lastFrameTimeMs = 0;
+// let maxFPS = 60;
+// let delta = 0;
+// let timestep = 1000 / maxFPS;
+
 /*
 function loop(timestamp) {
   if (timestamp < lastFrameTimeMs + (1000 / maxFPS)) {
@@ -62,7 +63,7 @@ function loop(timestamp) {
 
   let numUpdateSteps = 0;
   while (delta >= timestep) {
-    update(timestep);
+    update(1 / 60);
     delta -= timestep;
     if (++numUpdateSteps >= 100) {
       delta = 0;
@@ -72,42 +73,32 @@ function loop(timestamp) {
 
   render();
   requestAnimationFrame(loop);
-
-  // cloth.update()
 }
 
 function update(dt) {
-  
+  cloth.computeForces()
+  cloth.update(dt)
 }
 
 function render(dt) {
+  cloth.computeFaceNormals()
+  cloth.computeVertexNormals()
+  cloth.normalsNeedUpdate = true
   renderer.render(scene, camera);
 }
+
+requestAnimationFrame(loop);
 */
 
 document.body.appendChild(renderer.domElement);
 
-// requestAnimationFrame(loop);
-
-
 function animate() {
-  requestAnimationFrame(animate) 
+  requestAnimationFrame(animate)
   cloth.computeForces()
-  cloth.update()
+  cloth.update(1.0 / 120)
   cloth.computeFaceNormals()
   cloth.computeVertexNormals()
   cloth.normalsNeedUpdate = true
   renderer.render(scene, camera)
 }
 animate();
-
-// function test_stuff() {
-//   // camera.position.applyAxisAngle(new Vector3(0, 1, 0), -0.02);
-//   // camera.lookAt(0,0,0);
-
-//   for (var i in cloth.vertices) {
-//     cloth.vertices[i].y -= 0.01;
-//     // cloth.vertices[i].applyAxisAngle(new Vector3(0, 1, 0), -0.02);
-//   }
-//   cloth.verticesNeedUpdate = true;
-// }
