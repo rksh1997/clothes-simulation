@@ -2,18 +2,15 @@ import {
   Scene,
   PerspectiveCamera,
   WebGLRenderer,
-  // OrbitControls,
   Mesh,
   Color,
   Fog,
   DoubleSide,
   PointLight,
-  MeshNormalMaterial,
-  MeshBasicMaterial,
   MeshPhongMaterial,
-  MeshLambertMaterial,
-  MeshStandardMaterial
+  Vector3,
 } from 'three';
+import OrbitControls from 'three-orbitcontrols';
 
 import Cloth from './Cloth';
 
@@ -25,21 +22,29 @@ scene.background = new Color(0xcce0ff);
 scene.fog = new Fog(0xcce0ff, 500, 10000);
 
 const camera = new PerspectiveCamera(45, WIDTH / HEIGHT, 0.1, 100);
-camera.position.set(11, 0, 2.5)
+camera.position.set(10, 0, 4.5)
 camera.lookAt(0, 0, 0);
 
 const pointLight = new PointLight(0xdddddd);
+const secondLight = new PointLight(0xdddddd);
 pointLight.position.copy(camera.position)
+secondLight.position.copy(new Vector3(-10, 0, -7));
 scene.add(pointLight);
+scene.add(secondLight);
 
 const renderer = new WebGLRenderer();
 renderer.setSize(WIDTH, HEIGHT);
+const controls = new OrbitControls(camera, renderer.domElement)
+controls.enableDamping = true
+controls.dampingFactor = 0.25
+controls.enableZoom = true
 
 const num = 30
 const cloth = new Cloth(num, num);
+console.log(cloth.vertices[0]);
 
 const material = new MeshPhongMaterial({
-  wireframe: true,
+  // wireframe: true,
   color: 0xFF9999
 });
 const mesh = new Mesh(cloth, material);
