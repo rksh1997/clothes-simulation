@@ -23,6 +23,12 @@ class Cloth extends Geometry {
     // is vertex[i] pinned or not?
     this.pinned = new Int8Array(width * height);
 
+    this.airDensity = 300;
+    this.kDrag = 2;
+    this.kLift = 5;
+    this.airVelocity = new Vector3(0, 0, 1);
+    this.airVelocity.multiplyScalar(1)
+
     this.pin();
     this.createParticles();
     this.createSprings()
@@ -30,8 +36,8 @@ class Cloth extends Geometry {
   }
 
   pin() {
-    // for (let i = 0; i < this.width; i++) {
-    //   this.pinned[i + this.width * 0] = 1
+    // for (let i = 0; i < this.height; i++) {
+    //   this.pinned[this.width - 1 + this.width * i] = 1
     // }
     this.pinned[0] = 1
     this.pinned[this.width - 1] = 1
@@ -130,6 +136,10 @@ class Cloth extends Geometry {
       this.forces[i].sub(this.velocities[i].clone().multiplyScalar(this.DAMPING)) // damping
     }
 
+    for (let face of this.faces) {
+      this.addAirForce(face);
+    }
+
     let p1p2 = new Vector3()
     let v1v2 = new Vector3()
     let n = new Vector3()
@@ -162,6 +172,73 @@ class Cloth extends Geometry {
       if (!this.pinned[idx1])
         this.forces[idx1].sub(spring_damper_force);
     }
+  }
+
+  calcVSurface(face) {
+    const {
+      a,
+      b,
+      c
+    } = face;
+    const temp = new Vector3(0, 0, 0);
+    temp.add(this.velocities[a]);
+    temp.add(this.velocities[b]);
+    temp.add(this.velocities[c]);
+    return temp.multiplyScalar(1 / 3);
+  }
+
+  calcVRel(face) {
+    const vSurface = this.calcVSurface(face);
+    return vSurface.add(this.airVelocity).normalize();
+  }
+
+  calcSurfaceArea(face) {
+    const {
+      a,
+      b,
+      c
+    } = face;
+    const vrel = this.calcVRel(face);
+    const l1 = this.vertices[b].clone().sub(this.vertices[a]);
+    const l2 = this.vertices[c].clone().sub(this.vertices[a]);
+    const cross = l1.clone().cross(l2);
+    const length = cross.length();
+    const normal = cross.multiplyScalar(1 / length);
+    const area = 0.5 * length;
+    normal.multiplyScalar(area);
+    return Math.abs(normal.dot(vrel) / vrel.length());
+  }
+
+  calcAirDragForce(face) {
+    const vrel = this.calcVRel(face);
+    const vrelLength = vrel.length();
+    const num = 0.5 * this.airDensity * this.kDrag * this.calcSurfaceArea(face) * (vrelLength ** 2) * (face.normal.clone().dot(vrel))
+    return vrel.multiplyScalar(-num);
+  }
+
+  calcAirLiftingForce(face) {
+    const vrel = this.calcVRel(face);
+    const vrelLength = vrel.length();
+    const num = 0.5 * this.airDensity * this.kLift * this.calcSurfaceArea(face) * (vrelLength ** 2) * Math.cos(vrel.angleTo(face.normal));
+    const u = face.normal.clone().cross(vrel).cross(vrel);
+    return u.multiplyScalar(num);
+  }
+
+  addAirForce(face) {
+    const drag = this.calcAirDragForce(face);
+    const lift = this.calcAirLiftingForce(face);
+    const {
+      a,
+      b,
+      c
+    } = face;
+    const avg = drag.add(lift).multiplyScalar(1 / 3);
+    if (!this.pinned[a])
+      this.forces[a].add(avg);
+    if (!this.pinned[b])
+      this.forces[b].add(avg);
+    if (!this.pinned[c])
+      this.forces[c].add(avg);
   }
 
   update(dt) {

@@ -35,7 +35,7 @@ scene.add(pointLight);
 const renderer = new WebGLRenderer();
 renderer.setSize(WIDTH, HEIGHT);
 
-const num = 60
+const num = 30
 const cloth = new Cloth(num, num);
 
 const material = new MeshPhongMaterial({
