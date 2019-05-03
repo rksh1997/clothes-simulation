@@ -26,8 +26,11 @@ class Cloth extends Geometry {
     this.airDensity = 300;
     this.kDrag = 2;
     this.kLift = 5;
-    this.airVelocity = new Vector3(0, 0, 1);
-    this.airVelocity.multiplyScalar(1)
+    this.airVelocity = new Vector3(1, 1, 1);
+
+    this.createBall = false
+    this.ballPos = new Vector3(0, 2, 2)
+    this.ballRadius = 0.8
 
     this.pin();
     this.createParticles();
@@ -39,8 +42,13 @@ class Cloth extends Geometry {
     // for (let i = 0; i < this.height; i++) {
     //   this.pinned[this.width - 1 + this.width * i] = 1
     // }
-    this.pinned[0] = 1
-    this.pinned[this.width - 1] = 1
+    // for (let i = 0; i < this.width; i++) {
+    //   this.pinned[i] = 1
+    // }
+    this.pinned[this.flatten(0, 0)] = 1
+    this.pinned[this.flatten(0, this.width - 1)] = 1
+    // this.pinned[this.flatten(this.height - 1, this.width - 1)] = 1
+    // this.pinned[this.flatten(this.height - 1, 0)] = 1
   }
 
   createParticles() {
@@ -65,40 +73,17 @@ class Cloth extends Geometry {
   }
 
   createSprings() {
-    let dc1 = [1, -1, 0, 0]
-    let dr1 = [0, 0, 1, -1]
-
-    let dc2 = [1, 1, -1, -1]
-    let dr2 = [1, -1, 1, -1]
-
-    let dc3 = [2, -2, 0, 0, 2, 2, -2, -2]
-    let dr3 = [0, 0, 2, -2, 2, -2, 2, -2]
+    let di = [0, 1, 1, -1, 0, 2]
+    let dj = [1, 0, 1, 1, 2, 0]
 
     for (let i = 0; i < this.height; i++) {
       for (let j = 0; j < this.width; j++) {
         const p = this.flatten(i, j)
-
-        for (let d = 0; d < 4; d++) {
-          let ii = i + dr1[d]
-          let jj = j + dc1[d]
+        for (let d = 0; d < di.length; d++) {
+          let ii = i + di[d]
+          let jj = j + dj[d]
           if (this.check(ii, jj)) {
             this.springs.push(new Spring(this, p, this.flatten(ii, jj), 1000))
-          }
-        }
-
-        for (let d = 0; d < 4; d++) {
-          let ii = i + dr2[d]
-          let jj = j + dc2[d]
-          if (this.check(ii, jj)) {
-            this.springs.push(new Spring(this, p, this.flatten(ii, jj), 1200))
-          }
-        }
-
-        for (let d = 0; d < 4; d++) {
-          let ii = i + dr3[d]
-          let jj = j + dc3[d]
-          if (this.check(ii, jj)) {
-            this.springs.push(new Spring(this, p, this.flatten(ii, jj), 1400))
           }
         }
       }
@@ -136,10 +121,6 @@ class Cloth extends Geometry {
       this.forces[i].sub(this.velocities[i].clone().multiplyScalar(this.DAMPING)) // damping
     }
 
-    for (let face of this.faces) {
-      this.addAirForce(face);
-    }
-
     let p1p2 = new Vector3()
     let v1v2 = new Vector3()
     let n = new Vector3()
@@ -157,8 +138,8 @@ class Cloth extends Geometry {
 
       let deltaX = p1p2.length() - this.springs[i].restDistance
 
-      let f1 = -this.springs[i].K * deltaX / 2
-      const u = 0.9
+      let f1 = -this.springs[i].K * deltaX
+      const u = 0.8
       let f2 = Math.exp(-0.5 * deltaX * deltaX / (u * u))
       let springForce = f1 / f2
 
@@ -172,6 +153,36 @@ class Cloth extends Geometry {
       if (!this.pinned[idx1])
         this.forces[idx1].sub(spring_damper_force);
     }
+
+    // let windMagnitude = 1 //Math.cos(Date.now() / 600)
+    // let windForce = new Vector3()
+    // windForce.set(1, 1, 1).normalize().multiplyScalar(windMagnitude)
+    // // windForce.set(
+    // //   Math.sin(Date.now() / 600),
+    // //   Math.cos(Date.now() / 600),
+    // //   Math.sin(Date.now() / 600)
+    // // ).normalize().multiplyScalar(windMagnitude);
+
+    // for (let face of this.faces) {
+    //   const {
+    //     a,
+    //     b,
+    //     c
+    //   } = face;
+    //   let normal = face.normal
+    //   let cur = new Vector3()
+    //   cur.copy(normal).normalize().multiplyScalar(normal.dot(windForce))
+    //   if (!this.pinned[a])
+    //     this.forces[a].add(cur)
+    //   if (!this.pinned[b])
+    //     this.forces[b].add(cur)
+    //   if (!this.pinned[c])
+    //     this.forces[c].add(cur)
+    // }
+
+    // for (let face of this.faces) {
+    //   this.addAirForce(face);
+    // }
   }
 
   calcVSurface(face) {
@@ -241,6 +252,34 @@ class Cloth extends Geometry {
       this.forces[c].add(avg);
   }
 
+  lengthConstraint(p1, p2, restDistance) {
+    let diff = new Vector3()
+    diff.subVectors(this.vertices[p2], this.vertices[p1])
+    let currentDist = diff.length()
+    if (currentDist == 0) return
+    var correction = diff.multiplyScalar((currentDist - restDistance) / currentDist)
+    var correctionHalf = correction.multiplyScalar(0.5)
+    if (!this.pinned[p1])
+      this.vertices[p1].add(correctionHalf)
+    if (!this.pinned[p2])
+      this.vertices[p2].sub(correctionHalf)
+  }
+
+  repel(p1, p2, restDistance) {
+    let diff = new Vector3()
+    diff.subVectors(this.vertices[p2], this.vertices[p1])
+    let currentDist = diff.length()
+    if (currentDist == 0) return
+    if (currentDist < restDistance) {
+      var correction = diff.multiplyScalar((currentDist - restDistance) / currentDist)
+      var correctionHalf = correction.multiplyScalar(0.5)
+      if (!this.pinned[p1])
+        this.vertices[p1].add(correctionHalf)
+      if (!this.pinned[p2])
+        this.vertices[p2].sub(correctionHalf)
+    }
+  }
+
   update(dt) {
     this.verticesNeedUpdate = true
     for (let i in this.vertices) {
@@ -248,6 +287,36 @@ class Cloth extends Geometry {
       this.velocities[i].add(this.forces[i].clone().multiplyScalar(dt / this.MASS))
       this.vertices[i].add(prevVelocity.clone().multiplyScalar(dt))
     }
+
+    if (this.createBall) {
+      const added = 0.05
+      for (let i in this.vertices) {
+        let p = this.vertices[i]
+        if (p.distanceTo(this.ballPos) < this.ballRadius + added) {
+          let to = new Vector3()
+          to.subVectors(p, this.ballPos).normalize().multiplyScalar(this.ballRadius + added)
+          p.copy(to.add(this.ballPos))
+
+          let surfaceNormal = new Vector3()
+          surfaceNormal.subVectors(p, this.ballPos)
+
+          this.velocities[i].sub(surfaceNormal.multiplyScalar((1 + 1) * this.velocities[i].dot(surfaceNormal)))
+        }
+      }
+    }
+
+    // for (let i in this.springs) {
+    //   let idx1 = this.springs[i].p1
+    //   let idx2 = this.springs[i].p2
+    //   let restDistance = this.springs[i].restDistance
+    //   this.lengthConstraint(idx1, idx2, restDistance)
+    // }
+
+    // for (let i in this.vertices) {
+    //   for (let j in this.vertices) {
+    //     this.repel(i, j, 1 / this.width)
+    //   }
+    // }
   }
 }
 
