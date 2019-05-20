@@ -3,7 +3,7 @@ class Spring {
     this.p1 = p1;
     this.p2 = p2;
     this.K = K;
-    this.restDistance = cloth.vertices[p1].distanceTo(cloth.vertices[p2])
+    this.restDistance = cloth.vertices[p1].distanceTo(cloth.vertices[p2]);
   }
 }
 

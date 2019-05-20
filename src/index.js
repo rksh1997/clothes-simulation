@@ -8,11 +8,11 @@ import {
   DoubleSide,
   PointLight,
   MeshPhongMaterial,
-  Vector3,
-} from 'three';
-import OrbitControls from 'three-orbitcontrols';
+  Vector3
+} from "three";
+import OrbitControls from "three-orbitcontrols";
 
-import Cloth from './Cloth';
+import Cloth from "./Cloth";
 
 const WIDTH = window.innerWidth;
 const HEIGHT = window.innerHeight;
@@ -22,43 +22,42 @@ scene.background = new Color(0xcce0ff);
 scene.fog = new Fog(0xcce0ff, 500, 10000);
 
 const camera = new PerspectiveCamera(45, WIDTH / HEIGHT, 0.1, 100);
-camera.position.set(10, 0, 4.5)
+camera.position.set(10, 0, 4.5);
 camera.lookAt(0, 0, 0);
 
 const pointLight = new PointLight(0xdddddd);
 const secondLight = new PointLight(0xdddddd);
-pointLight.position.copy(camera.position)
+pointLight.position.copy(camera.position);
 secondLight.position.copy(new Vector3(-10, 0, -7));
 scene.add(pointLight);
 scene.add(secondLight);
 
 const renderer = new WebGLRenderer();
 renderer.setSize(WIDTH, HEIGHT);
-const controls = new OrbitControls(camera, renderer.domElement)
-controls.enableDamping = true
-controls.dampingFactor = 0.25
-controls.enableZoom = true
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.25;
+controls.enableZoom = true;
 
-const num = 30
+const num = 30;
 const cloth = new Cloth(num, num);
-console.log(cloth.vertices[0]);
 
 const material = new MeshPhongMaterial({
   // wireframe: true,
-  color: 0xFF9999
+  color: 0xff9999
 });
 const mesh = new Mesh(cloth, material);
 mesh.material.side = DoubleSide;
 scene.add(mesh);
 
-// let lastFrameTimeMs = 0;
-// let maxFPS = 60;
-// let delta = 0;
-// let timestep = 1000 / maxFPS;
+let lastFrameTimeMs = 0;
+const maxFPS = 60;
+let delta = 0;
+const timestep = 1000 / maxFPS;
+const physicsStep = 1 / 150;
 
-/*
 function loop(timestamp) {
-  if (timestamp < lastFrameTimeMs + (1000 / maxFPS)) {
+  if (timestamp < lastFrameTimeMs + timestep) {
     requestAnimationFrame(loop);
     return;
   }
@@ -68,7 +67,7 @@ function loop(timestamp) {
 
   let numUpdateSteps = 0;
   while (delta >= timestep) {
-    update(1 / 60);
+    update(physicsStep);
     delta -= timestep;
     if (++numUpdateSteps >= 100) {
       delta = 0;
@@ -81,29 +80,28 @@ function loop(timestamp) {
 }
 
 function update(dt) {
-  cloth.computeForces()
-  cloth.update(dt)
+  cloth.computeForces();
+  cloth.update(dt);
 }
 
-function render(dt) {
-  cloth.computeFaceNormals()
-  cloth.computeVertexNormals()
-  cloth.normalsNeedUpdate = true
+function render() {
+  cloth.computeFaceNormals();
+  cloth.computeVertexNormals();
+  cloth.normalsNeedUpdate = true;
   renderer.render(scene, camera);
 }
 
 requestAnimationFrame(loop);
-*/
 
 document.body.appendChild(renderer.domElement);
 
-function animate() {
-  requestAnimationFrame(animate)
-  cloth.computeForces()
-  cloth.update(1.0 / 120)
-  cloth.computeFaceNormals()
-  cloth.computeVertexNormals()
-  cloth.normalsNeedUpdate = true
-  renderer.render(scene, camera)
-}
-animate();
+// function animate() {
+//   requestAnimationFrame(animate)
+//   cloth.computeForces()
+//   cloth.update(1.0 / 120)
+//   cloth.computeFaceNormals()
+//   cloth.computeVertexNormals()
+//   cloth.normalsNeedUpdate = true
+//   renderer.render(scene, camera)
+// }
+// animate();
