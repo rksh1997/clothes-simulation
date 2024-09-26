@@ -6,15 +6,23 @@ import {
 } from 'three';
 
 
-class Particle extends Mesh {
-  constructor(geometry, material, position, mass) {
-    super(geometry, material);
-    this.position.copy(position);
-    this.previousPosition = position.clone();
+class Particle extends Vector3 {
+  constructor(x, y, z, mass) {
+    super(x, y, z);
+    this.previousPosition = new Vector3(x, y, z);
     this.velocity = new Vector3(0, 0, 0);
     this.acceleration = new Vector3(0, 0, 0);
     this.mass = mass;
     this.invMass = 1 / mass;
+    this.springs = []
+  }
+
+  preUpdate(dt) {
+    const length = this.springs.length;
+    for(let i = 0; i < length; i += 1) {
+      const spring = this.springs[i];
+      spring.update(dt);
+    }
   }
 
   update(dt) {
@@ -25,7 +33,7 @@ class Particle extends Mesh {
   }
 
   applyGravity(gravity) {
-    this.acceleration.add(gravity.multiplyScalar(this.invMassm));
+    this.acceleration.add(gravity.multiplyScalar(this.invMass));
   }
 
   applyForce(force) {
